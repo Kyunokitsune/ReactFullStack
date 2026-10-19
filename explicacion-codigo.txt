@@ -1,0 +1,165 @@
+GUIA DEL PROYECTO EJEMPLO-REACT
+================================
+
+Este proyecto es una pequeña aplicación web hecha con React y Vite. Muestra
+una barra de navegación, una galería de productos y un formulario de contacto.
+Bootstrap se utiliza para ayudar con los estilos y la adaptación a distintos
+tamaños de pantalla.
+
+
+1. COMO SE INICIA LA APLICACION
+-------------------------------
+
+index.html es el documento HTML inicial. Contiene un elemento <div id="root">,
+que sirve como espacio para dibujar la aplicación de React. También incluye
+el script que carga src/main.jsx.
+
+src/main.jsx es el punto de entrada de React:
+
+- Importa createRoot para enlazar React con el elemento "root" del HTML.
+- Importa los estilos globales de src/index.css.
+- Importa App, que contiene la estructura principal de la página.
+- Importa los estilos y el JavaScript de Bootstrap.
+- Renderiza App dentro de React.StrictMode. StrictMode ayuda a detectar
+  ciertos problemas de desarrollo; no es una sección visible de la página.
+
+vite.config.js configura Vite y habilita el complemento oficial de React.
+Vite sirve la aplicación durante el desarrollo y prepara los archivos
+optimizados cuando se crea la versión de producción.
+
+
+2. COMPONENTE PRINCIPAL: src/App.jsx
+------------------------------------
+
+App es el componente que reúne las secciones principales en el orden en que
+aparecen:
+
+1. NavBar: la navegación superior.
+2. Products: la galería de productos.
+3. ContactForm: el formulario de contacto.
+
+Los componentes se importan desde src/components. App no contiene los datos
+ni la lógica interna de esas secciones; delega esas responsabilidades en
+componentes más pequeños. Esto permite mantener y reutilizar cada parte con
+más facilidad.
+
+
+3. BARRA DE NAVEGACION: src/components/NavBar.jsx
+-------------------------------------------------
+
+NavBar devuelve el marcado HTML de una barra de navegación. Usa clases de
+Bootstrap para definir el diseño y el menú que se pliega en pantallas
+pequeñas.
+
+El botón de menú tiene atributos data-bs-* que Bootstrap utiliza para abrir
+y cerrar la navegación. Los enlaces llevan a secciones de la página mediante
+sus identificadores: #home y #productos. Para que el enlace #home navegue a
+una sección concreta, debe existir un elemento con id="home".
+
+
+4. CATALOGO: src/data/products.js Y Products.jsx
+-----------------------------------------------
+
+src/data/products.js exporta un arreglo llamado products. Cada elemento es un
+objeto con información de un producto:
+
+- id: identificador único usado por React en la lista.
+- name: nombre del producto.
+- price: precio numérico.
+- img: dirección de la imagen.
+- desc: descripción breve.
+
+src/components/Products.jsx importa products y usa el método map para recorrer
+el arreglo. Por cada producto crea una columna responsive y pasa el objeto a
+ProductCard mediante la propiedad product. La propiedad key usa el id para que
+React identifique cada elemento de la lista al actualizar la interfaz.
+
+
+5. TARJETA DE PRODUCTO: src/components/ProductCard.jsx
+-----------------------------------------------------
+
+ProductCard recibe un objeto product como propiedad (prop). Luego muestra la
+imagen, el nombre y la descripción usando expresiones JSX, por ejemplo
+{product.name}. Así se puede utilizar la misma tarjeta para todos los
+productos sin repetir el marcado.
+
+Las imágenes del catálogo están alojadas en direcciones de Internet. Por lo
+tanto, para que se vean, el navegador necesita conexión y el servicio externo
+de imágenes debe estar disponible. El atributo loading="lazy" permite aplazar
+la carga de imágenes que todavía no están cerca de la zona visible.
+
+
+6. FORMULARIO: src/components/ContactForm.jsx
+---------------------------------------------
+
+El formulario usa useState de React para recordar los valores y el estado de
+interacción:
+
+- values guarda el nombre, el correo y el mensaje escritos.
+- touched registra si cada campo fue visitado.
+- submitted registra si se intentó enviar el formulario.
+
+EMAIL_RE es una expresión regular sencilla que comprueba el formato general
+del correo: texto antes de @, texto después de @, un punto y al menos dos
+caracteres al final. No verifica que la dirección exista realmente.
+
+El objeto errors calcula los mensajes de validación para cada campo:
+
+- El nombre no puede estar vacío.
+- El correo no puede estar vacío y debe tener un formato aceptable.
+- El mensaje no puede estar vacío.
+
+fieldClass decide qué clases CSS de Bootstrap aplicar. Antes de interactuar
+con un campo, usa form-control. Después de visitarlo o de intentar enviar,
+añade is-valid o is-invalid según el resultado.
+
+handleChange actualiza el valor del campo que cambió y lo marca como visitado.
+El atributo name del campo indica qué propiedad de values se actualiza.
+
+handleBlur marca el campo como visitado cuando el usuario sale de él.
+
+handleSubmit evita que el navegador recargue la página. Marca el formulario
+como enviado y, si todos los campos son válidos, muestra una alerta y limpia
+los valores y estados.
+
+IMPORTANTE: el formulario es solo una demostración del lado del navegador. No
+envía el mensaje a un servidor ni lo guarda en una base de datos. Para recibir
+mensajes de verdad habría que conectarlo a un backend o a un servicio externo.
+
+
+7. ESTILOS
+----------
+
+src/index.css contiene estilos globales y variables CSS, como colores, fuente,
+fondo y bordes. También aplica reglas base al body, al elemento #root y a los
+títulos. La preferencia de tema oscuro del sistema cambia algunos colores.
+
+src/App.css contiene estilos de la plantilla inicial de Vite, como las clases
+hero, counter y next-steps. La versión actual de App no muestra esas secciones,
+por lo que varias de esas reglas pueden no afectar el contenido actual.
+
+Bootstrap se importa en src/main.jsx. Las clases como container, row, col-lg-8,
+card, btn y form-control vienen de Bootstrap y ayudan a organizar y dar estilo
+a la página.
+
+
+8. ARCHIVO package.json Y COMANDOS
+----------------------------------
+
+package.json declara las dependencias del proyecto y los comandos disponibles:
+
+- npm.cmd install: instala las dependencias del proyecto en Windows PowerShell.
+- npm.cmd run dev: inicia el servidor de desarrollo de Vite.
+- npm.cmd run build: genera los archivos optimizados para producción en dist.
+- npm.cmd run preview: previsualiza localmente la versión de producción.
+- npm.cmd run lint: ejecuta Oxlint para revisar el código.
+
+Para ejecutar el proyecto:
+
+1. Abre PowerShell en la carpeta que contiene package.json.
+2. Ejecuta npm.cmd install (solo es necesario si aún no están instaladas las
+   dependencias).
+3. Ejecuta npm.cmd run dev.
+4. Abre en el navegador la dirección local que indique Vite, normalmente
+   http://localhost:5173.
+
