@@ -1,6 +1,7 @@
 import NavBar from './components/NavBar.jsx'
 import Products from "./components/Products.jsx"
 import ContactForm from "./components/ContactForm.jsx"
+import DataTable from './components/DataTable.jsx'
 import './App.css'
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
       <NavBar/>
       <Products/>
       <ContactForm/>
+      <DataTable/>
     </>
   )
 }
