@@ -1,8 +1,7 @@
 # ReactFullStack
 
-Aplicación de ejemplo creada con React, Vite y Bootstrap. Incluye una barra de
-navegación, un catálogo de productos y un formulario de contacto con validación
-en el navegador.
+Tienda de productos gamer creada con React, Vite y Bootstrap. Incluye catálogo,
+carrito, descarga del catálogo en Excel, registro y administración de productos.
 
 ## Requisitos
 
@@ -31,3 +30,18 @@ bloquea `npm.ps1`.
 
 La guía `explicacion-codigo.txt` describe la estructura y el funcionamiento de
 los componentes principales.
+
+## Imágenes de productos
+
+Guarda las imágenes en `public/productos/` con estos nombres:
+
+- `mouse-gamer.webp`
+- `teclado-gamer.webp`
+- `headset-gamer.webp`
+- `monitor-gamer.webp`
+- `silla-gamer.webp`
+- `microfono-gamer.webp`
+- `control-gamer.webp`
+- `mousepad-gamer.webp`
+
+Las rutas y los datos de cada producto se editan en `src/data/products.js`.

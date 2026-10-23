@@ -1,11 +1,11 @@
-// Catálogo que consume Products.jsx. Cada objeto contiene los datos de una tarjeta.
+// Catálogo común para la tienda, el administrador y la descarga Excel.
 export const products = [
-  { id: 1, name: 'Auriculares Pro',   price: 69990,  img: 'https://images.unsplash.com/photo-1518444028785-8fbcd101ebb9?auto=format&fit=crop&w=600&q=60', desc: 'Audio de alta fidelidad con cancelación de ruido.' },
-  { id: 2, name: 'Smartwatch Fit',    price: 89990,  img: 'https://images.unsplash.com/photo-1519400197429-404ae1a1eaea?auto=format&fit=crop&w=600&q=60', desc: 'Controla tu actividad y recibe notificaciones.' },
-  { id: 3, name: 'Cámara Compacta',   price: 129990, img: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=60', desc: 'Imágenes nítidas en un tamaño portátil.' },
-  { id: 4, name: 'Laptop Ultra',      price: 749990, img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=600&q=60', desc: 'Rendimiento profesional para trabajar y crear.' },
-  { id: 5, name: 'Parlante Bluetooth',price: 49990,  img: 'https://images.unsplash.com/photo-1507878866276-a947ef722fee?auto=format&fit=crop&w=600&q=60', desc: 'Sonido potente en cualquier parte.' },
-  { id: 6, name: 'Teclado Mecánico',  price: 59990,  img: 'https://images.unsplash.com/photo-1517336714731-489689fdsbcb?auto=format&fit=crop&w=600&q=60', desc: 'Escritura cómoda con switches táctiles.' },
-  { id: 7, name: 'Mouse Inalámbrico', price: 29990,  img: 'https://images.unsplash.com/photo-1587825140400-1ae1a1d84f3f?auto=format&fit=crop&w=600&q=60', desc: 'Precisión y autonomía para trabajar cómodo.' },
-  { id: 8, name: 'Monitor 27" 4K',   price: 259990, img: 'https://images.unsplash.com/photo-1517336714731-489689a7d2dd?auto=format&fit=crop&w=600&q=60', desc: 'Resolución increíble para diseño y entretenimiento.' },
+  { id: 1, name: 'Mouse Gamer RGB', category: 'Mouse', price: 29990, img: '/productos/mouse.jpg', desc: 'Sensor de alta precisión y luces RGB configurables.' },
+  { id: 2, name: 'Teclado Mecánico Gamer', category: 'Teclados', price: 59990, img: '/productos/teclado-gamer.webp', desc: 'Teclas mecánicas rápidas para jugar y escribir.' },
+  { id: 3, name: 'Headset Gamer 7.1', category: 'Audio', price: 49990, img: '/productos/headset-gamer.webp', desc: 'Audio envolvente y micrófono ajustable.' },
+  { id: 4, name: 'Monitor Gamer 27" 165 Hz', category: 'Monitores', price: 249990, img: '/productos/monitor-gamer.webp', desc: 'Alta frecuencia de actualización para partidas fluidas.' },
+  { id: 5, name: 'Silla Gamer Ergonómica', category: 'Sillas', price: 189990, img: '/productos/silla-gamer.webp', desc: 'Respaldo reclinable y soporte para largas sesiones.' },
+  { id: 6, name: 'Micrófono USB Gamer', category: 'Audio', price: 39990, img: '/productos/microfono-gamer.webp', desc: 'Voz clara para streaming, llamadas y juegos.' },
+  { id: 7, name: 'Control Inalámbrico Gamer', category: 'Controles', price: 44990, img: '/productos/control-gamer.webp', desc: 'Control inalámbrico compatible con PC.' },
+  { id: 8, name: 'Mousepad Gamer XL RGB', category: 'Accesorios', price: 24990, img: '/productos/mousepad-gamer.webp', desc: 'Superficie amplia con iluminación RGB perimetral.' },
 ];
