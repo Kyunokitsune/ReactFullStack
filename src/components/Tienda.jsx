@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { products } from '../data/products.js';
+import Carrito from './Carrito.jsx';
+import Contacto from './Contacto.jsx';
 import '../Estyles/Tienda.css';
 
 export default function Tienda() {
@@ -50,7 +52,6 @@ export default function Tienda() {
   };
 
   const cantidadEnCarrito = carrito.reduce((total, item) => total + item.cantidad, 0);
-  const totalCarrito = carrito.reduce((total, item) => total + item.price * item.cantidad, 0);
 
   const descargarCatalogo = async () => {
     const XLSX = await import('@e965/xlsx');
@@ -174,75 +175,17 @@ Vestibulum a efficitur eros. S.</p>
           </section>
         </details> 
 
-        <section id="contacto">
-          <h2>Contáctanos</h2>
-          <form className="form-grupo" onSubmit={(e) => e.preventDefault()}>
-            <input type="text" placeholder="Nombre" required />
-            <input type="email" placeholder="Correo Electrónico" required />
-            <textarea rows="4" placeholder="Mensaje" required></textarea>
-            <button type="submit" className="btn-principal">Enviar Mensaje</button>
-          </form>
-        </section>
+        <Contacto />
       </main>
 
-      {carritoAbierto && (
-        <div
-          className="carrito-overlay"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setCarritoAbierto(false);
-          }}
-        >
-          <section className="carrito-panel" role="dialog" aria-modal="true" aria-labelledby="titulo-carrito">
-            <div className="carrito-encabezado">
-              <h2 id="titulo-carrito">Tu carrito</h2>
-              <button type="button" className="carrito-cerrar" onClick={() => setCarritoAbierto(false)}>
-                Cerrar
-              </button>
-            </div>
-            {carrito.length === 0 ? (
-              <p>Tu carrito está vacío.</p>
-            ) : (
-              <>
-                <ul className="lista-carrito">
-                  {carrito.map((item) => (
-                    <li key={item.id}>
-                      <div>
-                        <strong>{item.name}</strong>
-                        <span>
-                          {item.price.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                          {' '}× {item.cantidad}
-                        </span>
-                      </div>
-                      <div className="carrito-acciones">
-                        <button
-                          type="button"
-                          aria-label={`Quitar una unidad de ${item.name}`}
-                          onClick={() => quitarDelCarrito(item.id)}
-                        >
-                          −
-                        </button>
-                        <button type="button" onClick={() => agregarAlCarrito(item)}>
-                          +
-                        </button>
-                        <button
-                          type="button"
-                          className="carrito-eliminar"
-                          onClick={() => eliminarDelCarrito(item.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <p className="carrito-total">
-                  Total: {totalCarrito.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                </p>
-              </>
-            )}
-          </section>
-        </div>
-      )}
+      <Carrito
+        abierto={carritoAbierto}
+        carrito={carrito}
+        onCerrar={() => setCarritoAbierto(false)}
+        onAgregar={agregarAlCarrito}
+        onQuitar={quitarDelCarrito}
+        onEliminar={eliminarDelCarrito}
+      />
 
       <footer>
         <p>&copy; 2026 Muki. Todos los derechos reservados.</p>
