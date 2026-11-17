@@ -1,33 +1,218 @@
-GUIA DE LA TIENDA GAMER
-=======================
+GUIA DE ESTUDIO: TIENDA REACT + API REST SPRING BOOT + ORACLE
+=============================================================
 
-La aplicación está hecha con React y Vite.
+OBJETIVO DEL CAMBIO
+-------------------
 
-Estructura principal:
+La interfaz sigue hecha en React. Spring Boot se agrego como backend para
+recibir solicitudes HTTP, validar datos y leer o modificar registros en
+Oracle. SQL Developer permite conectarse y administrar Oracle; la aplicacion
+Java se conecta directamente a la base de datos mediante el driver JDBC.
 
+El recorrido de una consulta es:
+
+React -> solicitud HTTP/JSON -> controlador REST -> repositorio JPA
+      -> driver JDBC de Oracle -> tablas de la base de datos
+
+La respuesta vuelve en sentido contrario como JSON. El carrito sigue guardado
+en el navegador; productos y usuarios se guardan en Oracle.
+
+1. ESTRUCTURA DEL PROYECTO
+--------------------------
+
+FRONTEND
 - src/main.jsx inicia React y carga Bootstrap.
-- src/App.jsx declara las rutas de Tienda, Registro y Admin.
-- src/components/Tienda.jsx muestra el catálogo, el carrito y la descarga Excel.
-- src/components/Registro.jsx contiene el formulario de registro.
-- src/components/Admin.jsx permite administrar productos y usuarios.
-- src/data/products.js contiene el catálogo compartido por la tienda, el admin
-  y el archivo Excel. Cada producto define nombre, categoría, precio, imagen y
-  descripción.
+- src/App.jsx define las rutas Tienda, Registro y Admin.
+- src/components/Tienda.jsx pide el catalogo a GET /api/productos.
+- src/components/Registro.jsx permite crear una cuenta e iniciar sesion.
+- src/components/Admin.jsx consulta y administra productos y usuarios.
+- src/services/api.js centraliza las solicitudes HTTP y la autenticacion.
+- vite.config.js reenvia /api al backend local en localhost:8080 durante
+  el desarrollo.
 
-IMAGENES DE PRODUCTOS
----------------------
+BACKEND
+- backend/pom.xml declara Spring Boot, JPA, seguridad, validacion y el driver
+  JDBC de Oracle.
+- backend/src/main/java/cl/tienda/api/TiendaApiApplication.java inicia Spring.
+- model/Producto.java y model/Usuario.java representan las tablas.
+- repository/ contiene interfaces JpaRepository para consultar y guardar
+  entidades sin escribir SQL CRUD a mano.
+- controller/ contiene los endpoints REST.
+- dto/ define los datos que la API acepta y devuelve; UsuarioResponse no incluye
+  la contraseña.
+- config/SecurityConfig.java define los permisos y el codificador BCrypt.
+- config/DataInitializer.java agrega el catalogo inicial y crea el primer
+  administrador cuando corresponde.
+- backend/src/main/resources/application.properties configura la base y el
+  puerto.
 
-Guarda las imágenes en public/productos/. Los nombres deben coincidir con las
-rutas img de src/data/products.js, por ejemplo:
+2. COMO SE HIZO EL CRUD
+-----------------------
 
-- public/productos/mouse-gamer.webp
-- public/productos/teclado-gamer.webp
-- public/productos/headset-gamer.webp
-- public/productos/monitor-gamer.webp
-- public/productos/silla-gamer.webp
-- public/productos/microfono-gamer.webp
-- public/productos/control-gamer.webp
-- public/productos/mousepad-gamer.webp
+ProductoController recibe las solicitudes de /api/productos:
+- GET /api/productos: lee todos los productos.
+- GET /api/productos/{id}: lee un producto.
+- POST /api/productos: crea un producto.
+- PUT /api/productos/{id}: actualiza sus datos.
+- DELETE /api/productos/{id}: elimina el producto.
 
-Las rutas comienzan con /productos/ porque Vite sirve el contenido de public
-desde la raíz del sitio.
+UsuarioController ofrece operaciones similares en /api/usuarios. El registro
+publico se realiza en POST /api/usuarios/registro; GET, POST, PUT y DELETE de
+administracion requieren el rol ADMIN. El CRUD valida campos con Jakarta
+Validation. Los errores se devuelven como respuestas HTTP, por ejemplo 400
+para datos invalidos, 404 para un registro inexistente y 409 para un correo
+duplicado.
+
+Producto tiene nombre, categoria, precio, imagen y descripcion. Usuario tiene
+nombre, correo, contraseña cifrada y rol. Las entidades tienen @Entity y
+@Table para que JPA las relacione con las tablas productos y usuarios. Los
+repositorios heredan de JpaRepository, que proporciona findAll, findById,
+save y delete.
+
+3. CONEXION A ORACLE
+--------------------
+
+Oracle XE de este equipo tiene el servicio XEPDB1, host localhost y puerto
+1521. La URL JDBC es:
+
+  jdbc:oracle:thin:@localhost:1521/XEPDB1
+
+El driver ojdbc11 permite la comunicacion entre Java y Oracle. Las variables
+ORACLE_URL, ORACLE_USER y ORACLE_PASSWORD entregan la URL, el usuario de la
+base de datos y su contraseña a Spring. La configuracion usa
+spring.jpa.hibernate.ddl-auto=update: Hibernate crea o ajusta las tablas de las
+entidades sin borrar las existentes. No es lo mismo que APP_ADMIN_EMAIL y
+APP_ADMIN_PASSWORD, que configuran el usuario administrador de la tienda.
+
+DataInitializer agrega ocho productos solo si la tabla productos esta vacia.
+Tambien crea un ADMIN si APP_ADMIN_EMAIL y APP_ADMIN_PASSWORD estan definidas
+y ese correo aun no existe. No cambia la clave de un administrador existente.
+Las contraseñas de usuarios se guardan cifradas con BCrypt.
+
+4. AUTENTICACION Y ROLES
+------------------------
+
+POST /api/auth/login comprueba el correo y la contraseña en la base de datos.
+Los productos se pueden consultar sin iniciar sesion; crear, editar o borrar
+productos requiere rol ADMIN. Administrar usuarios tambien requiere ADMIN.
+Tras iniciar sesion, React conserva la autorizacion durante la sesion del
+navegador y la envia a la API.
+
+5. ENDPOINTS PRINCIPALES
+------------------------
+
+Metodo  Ruta                         Permiso  Funcion
+GET     /api/productos               Publico  Listar productos
+GET     /api/productos/{id}          Publico  Leer un producto
+POST    /api/productos               ADMIN    Crear producto
+PUT     /api/productos/{id}          ADMIN    Actualizar producto
+DELETE  /api/productos/{id}          ADMIN    Eliminar producto
+POST    /api/usuarios/registro       Publico  Registrar cliente
+POST    /api/auth/login              Publico  Iniciar sesion
+GET     /api/usuarios                ADMIN    Listar usuarios
+GET     /api/usuarios/{id}           ADMIN    Leer usuario
+POST    /api/usuarios                ADMIN    Crear usuario
+PUT     /api/usuarios/{id}           ADMIN    Actualizar usuario
+DELETE  /api/usuarios/{id}           ADMIN    Eliminar usuario
+
+Un POST/PUT de producto recibe JSON como:
+
+  {
+    "nombre": "Mouse Gamer",
+    "categoria": "Mouse",
+    "precio": 29990,
+    "imagen": "/productos/mouse.jpg",
+    "descripcion": "Mouse con iluminacion RGB"
+  }
+
+6. EJECUCION LOCAL PASO A PASO
+-----------------------------
+
+A. Iniciar Oracle XE
+Comprueba en Windows que los servicios OracleOraDB21Home1TNSListener y
+OracleServiceXE esten iniciados. SQL Developer es una interfaz para Oracle;
+no reemplaza el servidor de base de datos.
+
+B. Crear el usuario para la aplicacion (una sola vez)
+Desde PowerShell, abre SQL*Plus como SYSTEM conectado al servicio XEPDB1:
+
+  & "C:\Oracle21c\dbhomeXE\bin\sqlplus.exe" SYSTEM@//localhost:1521/XEPDB1
+
+SQL*Plus pedira la contraseña de SYSTEM. Una vez conectado, ejecuta las
+siguientes sentencias, reemplazando MiClaveOracle por una contraseña propia:
+
+  CREATE USER tienda_app IDENTIFIED BY "MiClaveOracle";
+  GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO tienda_app;
+  ALTER USER tienda_app QUOTA UNLIMITED ON USERS;
+  EXIT;
+
+Si tienda_app ya existe y solo necesitas cambiar su contraseña, conectado
+como SYSTEM ejecuta:
+
+  ALTER USER tienda_app IDENTIFIED BY "MiClaveOracle";
+
+SQL Developer tambien puede ejecutar estas sentencias en una hoja SQL
+conectada como SYSTEM al servicio XEPDB1.
+
+C. Arrancar el backend (en PowerShell, dentro de la carpeta backend)
+
+  $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.21.9-hotspot"
+  $env:Path = "$env:JAVA_HOME\bin;$env:USERPROFILE\tools\apache-maven-3.9.11\bin;$env:Path"
+  $env:ORACLE_URL = "jdbc:oracle:thin:@localhost:1521/XEPDB1"
+  $env:ORACLE_USER = "tienda_app"
+  $env:ORACLE_PASSWORD = "MiClaveOracle"
+  $env:APP_ADMIN_EMAIL = "admin@duoc.cl"
+  $env:APP_ADMIN_PASSWORD = "UnaClaveAdmin123"
+  mvn spring-boot:run
+
+Reemplaza las dos contraseñas por las que elegiste. ORACLE_PASSWORD pertenece
+al usuario de Oracle tienda_app. APP_ADMIN_PASSWORD es la contraseña de
+inicio de sesion del administrador de la tienda; son cuentas distintas.
+Mantén la misma terminal abierta mientras se ejecuta Spring Boot. Si `mvn`
+no se reconoce, ejecuta primero la linea que configura Path como se muestra.
+
+D. Agregar otro administrador desde la terminal
+Detén el backend con Ctrl+C. En la misma ventana PowerShell asigna un correo
+que aun no exista y una contraseña nueva, y vuelve a arrancarlo:
+
+  $env:APP_ADMIN_EMAIL = "admin2@duoc.cl"
+  $env:APP_ADMIN_PASSWORD = "OtraClaveAdmin123"
+  mvn spring-boot:run
+
+Al iniciar, DataInitializer crea ese usuario solo si el correo no existe.
+Cambiar APP_ADMIN_PASSWORD para un correo ya existente no restablece su clave.
+Las variables de entorno duran en esa ventana de PowerShell; vuelve a
+configurarlas al abrir una terminal nueva. No guardes contraseñas reales en
+archivos del proyecto ni las compartas.
+
+E. Arrancar React
+Abre otra terminal en la carpeta principal del proyecto:
+
+  npm.cmd run dev
+
+Abre la direccion que muestre Vite, normalmente http://localhost:5173. El
+backend debe seguir funcionando en http://localhost:8080.
+
+7. PUERTOS Y CONFIGURACION
+--------------------------
+
+- Oracle escucha en 1521. Su puerto y servicio forman parte de ORACLE_URL.
+- Spring Boot escucha por defecto en 8080. Se configura en
+  backend/src/main/resources/application.properties con:
+
+    server.port=${SERVER_PORT:8080}
+
+  Para usar otro puerto, por ejemplo 8081, antes de arrancar Spring ejecuta:
+
+    $env:SERVER_PORT = "8081"
+
+  Si se cambia, actualiza tambien el proxy de vite.config.js para que apunte al
+  nuevo puerto.
+- Vite usa normalmente 5173 para la interfaz. Ese puerto no es el de Oracle ni
+  el de la API.
+
+8. IMAGENES
+-----------
+
+Guarda las imagenes en public/productos/. Las rutas de imagen guardadas en los
+productos comienzan con /productos/, por ejemplo /productos/mouse.jpg.

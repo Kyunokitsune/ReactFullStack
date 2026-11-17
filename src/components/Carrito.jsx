@@ -10,7 +10,10 @@ export default function Carrito({
     return null;
   }
 
-  const totalCarrito = carrito.reduce((total, item) => total + item.price * item.cantidad, 0);
+  const totalCarrito = carrito.reduce(
+    (total, item) => total + Number(item.precio ?? item.price) * item.cantidad,
+    0
+  );
 
   return (
     <div
@@ -34,16 +37,16 @@ export default function Carrito({
               {carrito.map((item) => (
                 <li key={item.id}>
                   <div>
-                    <strong>{item.name}</strong>
+                    <strong>{item.nombre ?? item.name}</strong>
                     <span>
-                      {item.price.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                      {Number(item.precio ?? item.price).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                       {' '}× {item.cantidad}
                     </span>
                   </div>
                   <div className="carrito-acciones">
                     <button
                       type="button"
-                      aria-label={`Quitar una unidad de ${item.name}`}
+                      aria-label={`Quitar una unidad de ${item.nombre ?? item.name}`}
                       onClick={() => onQuitar(item.id)}
                     >
                       −

@@ -1,84 +1,113 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, guardarCredenciales } from '../services/api.js';
 import '../Estyles/Tienda.css';
 
 export default function Registro() {
+  const [modo, setModo] = useState('registro');
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     const nombreNormalizado = nombre.trim();
     const correoNormalizado = correo.trim().toLowerCase();
     const regexDominios = /^[a-zA-Z0-9._%+-]+@(gmail\.com|duocuc\.cl|duoc\.cl)$/i;
 
-    if (!nombreNormalizado) {
+    if (modo === 'registro' && !nombreNormalizado) {
       setError('Ingresa tu nombre.');
       return;
     }
 
-    if (!correoNormalizado.includes('@')) {
-      setError('El correo debe incluir el símbolo @.');
-      return;
-    }
-
-    if (!regexDominios.test(correoNormalizado)) {
+    if (modo === 'registro' && !regexDominios.test(correoNormalizado)) {
       setError('Usa un correo válido de Gmail o DuocUC (@gmail.com, @duocuc.cl o @duoc.cl).');
       return;
     }
 
-    if (!password.trim()) {
-      setError('Ingresa tu contraseña.');
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
       return;
     }
 
     setError('');
+    setEnviando(true);
+    try {
+      if (modo === 'registro') {
+        await apiRequest('/usuarios/registro', {
+          method: 'POST',
+          body: JSON.stringify({ nombre: nombreNormalizado, correo: correoNormalizado, password }),
+        });
+      }
 
-    if (nombreNormalizado === 'Admin123' && correoNormalizado === 'adminduoc@duoc.cl' && password === 'Administrador2026') {
-      localStorage.setItem('usuarioActivo', JSON.stringify({ nombre: nombreNormalizado, correo: correoNormalizado, rol: 'admin' }));
-      navigate('/admin'); // Reemplaza window.location.href = 'Home.admin.html'
-    } else {
-      const usuario = { nombre: nombreNormalizado, correo: correoNormalizado };
-      localStorage.setItem('usuarioActivo', JSON.stringify(usuario));
-      navigate('/Tienda'); // Reemplaza window.location.href = 'Home_tienda.html'
+      const usuario = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ correo: correoNormalizado, password }),
+      });
+
+      guardarCredenciales(correoNormalizado, password);
+      localStorage.setItem('usuarioActivo', JSON.stringify({
+        nombre: usuario.nombre,
+        correo: usuario.correo,
+        rol: usuario.rol.toLowerCase(),
+      }));
+      navigate(usuario.rol === 'ADMIN' ? '/Admin' : '/Tienda');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setEnviando(false);
     }
+  };
+
+  const cambiarModo = () => {
+    setModo((actual) => (actual === 'registro' ? 'login' : 'registro'));
+    setError('');
   };
 
   return (
     <div className="contenedor-registro">
-      <h2>Crear Cuenta</h2>
-      <p>Ingresa tus datos para acceder a la tienda.</p>
+      <h2>{modo === 'registro' ? 'Crear Cuenta' : 'Iniciar Sesión'}</h2>
+      <p>{modo === 'registro' ? 'Ingresa tus datos para crear una cuenta.' : 'Ingresa con tu correo y contraseña.'}</p>
 
       <form id="formRegistro" className="form-grupo" onSubmit={handleSubmit} noValidate>
-        <input 
-          type="text" 
-          placeholder="Nombre completo" 
-          value={nombre} 
-          onChange={(e) => setNombre(e.target.value)} 
-          autoComplete="name"
-        />
-        <input 
-          type="text" 
+        {modo === 'registro' && (
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            value={nombre}
+            onChange={(event) => setNombre(event.target.value)}
+            autoComplete="name"
+            required
+          />
+        )}
+        <input
+          type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder="Correo electrónico" 
-          value={correo} 
-          onChange={(e) => setCorreo(e.target.value)} 
+          placeholder="Correo electrónico"
+          value={correo}
+          onChange={(event) => setCorreo(event.target.value)}
+          required
         />
-        <input 
-          type="password" 
-          placeholder="Contraseña" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          autoComplete="new-password"
+        <input
+          type="password"
+          placeholder="Contraseña (mínimo 8 caracteres)"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete={modo === 'registro' ? 'new-password' : 'current-password'}
+          required
         />
         {error && <p className="registro-error" role="alert">{error}</p>}
-        <button type="submit" className="btn-principal">Registrarse e Ingresar</button>
+        <button type="submit" className="btn-principal" disabled={enviando}>
+          {enviando ? 'Procesando...' : modo === 'registro' ? 'Registrarse e ingresar' : 'Ingresar'}
+        </button>
       </form>
+      <button type="button" className="btn-principal" onClick={cambiarModo}>
+        {modo === 'registro' ? 'Ya tengo una cuenta' : 'Crear una cuenta'}
+      </button>
     </div>
   );
 }

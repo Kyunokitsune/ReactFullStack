@@ -1,122 +1,91 @@
-import { useState, useEffect } from 'react';
-import { products } from '../data/products.js';
+import { useEffect, useState } from 'react';
+import { apiRequest } from '../services/api.js';
 import '../Estyles/Admin.css';
 
-const productosCatalogo = products.map(({ id, name, price, category }) => ({
-  id,
-  nombre: name,
-  precio: price,
-  categoria: category,
-}));
-
-const usuariosIniciales = [
-  { id: 1, nombre: "admin1", correo: "adminduoc@duoc.cl", rol: "Administrador" },
-  { id: 2, nombre: "juan_perez", correo: "juan.perez@gmail.com", rol: "Cliente" }
-];
+const productoVacio = { nombre: '', precio: '', categoria: '', imagen: '', descripcion: '' };
+const usuarioVacio = { nombre: '', correo: '', rol: 'CLIENTE', password: '' };
 
 export default function Admin() {
   const [pestanaActiva, setPestanaActiva] = useState('productos');
   const [productos, setProductos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [formProd, setFormProd] = useState(productoVacio);
+  const [formUser, setFormUser] = useState(usuarioVacio);
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(true);
 
-  // Estados para formularios
-  const [formProd, setFormProd] = useState({ id: '', nombre: '', precio: '', categoria: '' });
-  const [formUser, setFormUser] = useState({ id: '', nombre: '', correo: '', rol: 'Cliente' });
-
-  // Inicializar datos equivalentes a la función inicializarDatos() de amin.js
   useEffect(() => {
-    const prodsLocales = JSON.parse(localStorage.getItem('productos'));
-    const usersLocales = JSON.parse(localStorage.getItem('usuarios'));
-    const catalogoGamerIntegrado = localStorage.getItem('catalogoGamerIntegrado') === 'true';
-
-    if (!prodsLocales) {
-      localStorage.setItem('productos', JSON.stringify(productosCatalogo));
-      localStorage.setItem('catalogoGamerIntegrado', 'true');
-      setProductos(productosCatalogo);
-    } else {
-      let productosActualizados = prodsLocales;
-
-      if (!catalogoGamerIntegrado) {
-        const productosActualizadosPorId = new Map(
-          productosCatalogo.map((producto) => [producto.id, producto])
-        );
-        const productosPersonalizados = prodsLocales.filter(
-          (producto) => !productosActualizadosPorId.has(producto.id) && producto.id !== 101 && producto.id !== 102
-        );
-        productosActualizados = [...productosPersonalizados, ...productosCatalogo];
-        localStorage.setItem('productos', JSON.stringify(productosActualizados));
-        localStorage.setItem('catalogoGamerIntegrado', 'true');
-      }
-
-      setProductos(productosActualizados);
-    }
-
-    if (!usersLocales) {
-      localStorage.setItem('usuarios', JSON.stringify(usuariosIniciales));
-      setUsuarios(usuariosIniciales);
-    } else {
-      setUsuarios(usersLocales);
-    }
+    Promise.all([apiRequest('/productos'), apiRequest('/usuarios')])
+      .then(([listaProductos, listaUsuarios]) => {
+        setProductos(listaProductos);
+        setUsuarios(listaUsuarios);
+      })
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setCargando(false));
   }, []);
 
-  // --- LÓGICA DE PRODUCTOS ---
-  const guardarProducto = (e) => {
-    e.preventDefault();
-    let nuevosProductos = [...productos];
-
-    if (formProd.id) {
-      nuevosProductos = nuevosProductos.map(p => p.id === formProd.id ? { ...formProd, id: Number(formProd.id), precio: Number(formProd.precio) } : p);
-    } else {
-      nuevosProductos.push({ ...formProd, id: Date.now(), precio: Number(formProd.precio) });
+  const guardarProducto = async (event) => {
+    event.preventDefault();
+    setError('');
+    const editar = Boolean(formProd.id);
+    const { id, ...datosProducto } = formProd;
+    try {
+      const producto = await apiRequest(editar ? `/productos/${id}` : '/productos', {
+        method: editar ? 'PUT' : 'POST',
+        body: JSON.stringify({ ...datosProducto, precio: Number(datosProducto.precio) }),
+      });
+      setProductos((actuales) => editar
+        ? actuales.map((item) => (item.id === producto.id ? producto : item))
+        : [...actuales, producto]);
+      setFormProd(productoVacio);
+    } catch (requestError) {
+      setError(requestError.message);
     }
-
-    setProductos(nuevosProductos);
-    localStorage.setItem('productos', JSON.stringify(nuevosProductos));
-    setFormProd({ id: '', nombre: '', precio: '', categoria: '' });
   };
 
-  const cargarEdicionProducto = (prod) => setFormProd(prod);
-  
-  const eliminarProducto = (id) => {
-    const filtrados = productos.filter(p => p.id !== id);
-    setProductos(filtrados);
-    localStorage.setItem('productos', JSON.stringify(filtrados));
+  const eliminarProducto = async (id) => {
+    setError('');
+    try {
+      await apiRequest(`/productos/${id}`, { method: 'DELETE' });
+      setProductos((actuales) => actuales.filter((producto) => producto.id !== id));
+      if (formProd.id === id) setFormProd(productoVacio);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
-  // --- LÓGICA DE USUARIOS ---
-  const guardarUsuario = (e) => {
-    e.preventDefault();
-
-    // Validación de dominios extraída de tu amin.js
-    const regexDominios = /^[a-zA-Z0-9._%+-]+@(gmail\.com|duocuc\.cl|duoc\.cl)$/;
-    if (!regexDominios.test(formUser.correo)) {
-      alert("Por favor, ingresa un correo institucional de DuocUC o Gmail.");
-      return;    
+  const guardarUsuario = async (event) => {
+    event.preventDefault();
+    setError('');
+    const editar = Boolean(formUser.id);
+    const { id, ...datosUsuario } = formUser;
+    try {
+      const usuario = await apiRequest(editar ? `/usuarios/${id}` : '/usuarios', {
+        method: editar ? 'PUT' : 'POST',
+        body: JSON.stringify(datosUsuario),
+      });
+      setUsuarios((actuales) => editar
+        ? actuales.map((item) => (item.id === usuario.id ? usuario : item))
+        : [...actuales, usuario]);
+      setFormUser(usuarioVacio);
+    } catch (requestError) {
+      setError(requestError.message);
     }
-
-    let nuevosUsuarios = [...usuarios];
-    if (formUser.id) {
-      nuevosUsuarios = nuevosUsuarios.map(u => u.id === formUser.id ? { ...formUser, id: Number(formUser.id) } : u);
-    } else {
-      nuevosUsuarios.push({ ...formUser, id: Date.now() });
-    }
-
-    setUsuarios(nuevosUsuarios);
-    localStorage.setItem('usuarios', JSON.stringify(nuevosUsuarios));
-    setFormUser({ id: '', nombre: '', correo: '', rol: 'Cliente' });
   };
 
-  const cargarEdicionUsuario = (user) => setFormUser(user);
-
-  const eliminarUsuario = (id) => {
-    const filtrados = usuarios.filter(u => u.id !== id);
-    setUsuarios(filtrados);
-    localStorage.setItem('usuarios', JSON.stringify(filtrados));
+  const eliminarUsuario = async (id) => {
+    setError('');
+    try {
+      await apiRequest(`/usuarios/${id}`, { method: 'DELETE' });
+      setUsuarios((actuales) => actuales.filter((usuario) => usuario.id !== id));
+      if (formUser.id === id) setFormUser(usuarioVacio);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   return (
     <div className="container" style={{ marginTop: '30px' }}>
-      {/* Navegación entre pestañas */}
       <div className="nav-tabs">
         <button className={`tab-btn ${pestanaActiva === 'productos' ? 'active' : ''}`} onClick={() => setPestanaActiva('productos')}>
           Productos
@@ -126,69 +95,84 @@ export default function Admin() {
         </button>
       </div>
 
-      {/* Sección Productos */}
-      {pestanaActiva === 'productos' && (
-        <div className="section active">
-          <h2>Gestión de Productos</h2>
-          <form onSubmit={guardarProducto}>
-            <input type="text" placeholder="Nombre Producto" value={formProd.nombre} onChange={e => setFormProd({...formProd, nombre: e.target.value})} required />
-            <input type="number" placeholder="Precio" value={formProd.precio} onChange={e => setFormProd({...formProd, precio: e.target.value})} required />
-            <input type="text" placeholder="Categoría" value={formProd.categoria} onChange={e => setFormProd({...formProd, categoria: e.target.value})} required />
-            <button type="submit">{formProd.id ? 'Actualizar Producto' : 'Guardar Producto'}</button>
-            <button type="button" onClick={() => setFormProd({ id: '', nombre: '', precio: '', categoria: '' })} style={{ background: '#6c757d' }}>Cancelar</button>
-          </form>
+      {error && <p role="alert" className="registro-error">{error}</p>}
+      {cargando ? <p>Cargando registros...</p> : (
+        <>
+          {pestanaActiva === 'productos' && (
+            <section className="section active">
+              <h2>Gestión de Productos</h2>
+              <form onSubmit={guardarProducto}>
+                <input placeholder="Nombre del producto" value={formProd.nombre} onChange={(event) => setFormProd({ ...formProd, nombre: event.target.value })} required />
+                <input type="number" min="0.01" step="0.01" placeholder="Precio" value={formProd.precio} onChange={(event) => setFormProd({ ...formProd, precio: event.target.value })} required />
+                <input placeholder="Categoría" value={formProd.categoria} onChange={(event) => setFormProd({ ...formProd, categoria: event.target.value })} required />
+                <input placeholder="Ruta de imagen (opcional)" value={formProd.imagen || ''} onChange={(event) => setFormProd({ ...formProd, imagen: event.target.value })} />
+                <input placeholder="Descripción (opcional)" value={formProd.descripcion || ''} onChange={(event) => setFormProd({ ...formProd, descripcion: event.target.value })} />
+                <button type="submit">{formProd.id ? 'Actualizar Producto' : 'Guardar Producto'}</button>
+                <button type="button" onClick={() => setFormProd(productoVacio)} style={{ background: '#6c757d' }}>Cancelar</button>
+              </form>
 
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-              {productos.map(p => (
-                <tr key={p.id}>
-                  <td>{p.id}</td><td>{p.nombre}</td><td>${p.precio}</td><td>{p.categoria}</td>
-                  <td>
-                    <button className="btn-warning" onClick={() => cargarEdicionProducto(p)} style={{ marginRight: '5px' }}>Editar</button>
-                    <button className="btn-danger" onClick={() => eliminarProducto(p.id)}>Eliminar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              <table>
+                <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  {productos.map((producto) => (
+                    <tr key={producto.id}>
+                      <td>{producto.id}</td>
+                      <td>{producto.nombre}</td>
+                      <td>{Number(producto.precio).toLocaleString('es-CL')}</td>
+                      <td>{producto.categoria}</td>
+                      <td>
+                        <button className="btn-warning" onClick={() => setFormProd({ ...producto, precio: String(producto.precio) })} style={{ marginRight: '5px' }}>Editar</button>
+                        <button className="btn-danger" onClick={() => eliminarProducto(producto.id)}>Eliminar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
 
-      {/* Sección Usuarios */}
-      {pestanaActiva === 'usuarios' && (
-        <div className="section active">
-          <h2>Gestión de Usuarios</h2>
-          <form onSubmit={guardarUsuario}>
-            <input type="text" placeholder="Nombre de usuario" value={formUser.nombre} onChange={e => setFormUser({...formUser, nombre: e.target.value})} required />
-            <input type="email" placeholder="Correo electrónico" value={formUser.correo} onChange={e => setFormUser({...formUser, correo: e.target.value})} required />
-            <select value={formUser.rol} onChange={e => setFormUser({...formUser, rol: e.target.value})} required>
-              <option value="Cliente">Cliente</option>
-              <option value="Administrador">Administrador</option>
-            </select>
-            <button type="submit">{formUser.id ? 'Actualizar Usuario' : 'Guardar Usuario'}</button>
-            <button type="button" onClick={() => setFormUser({ id: '', nombre: '', correo: '', rol: 'Cliente' })} style={{ background: '#6c757d' }}>Cancelar</button>
-          </form>
+          {pestanaActiva === 'usuarios' && (
+            <section className="section active">
+              <h2>Gestión de Usuarios</h2>
+              <form onSubmit={guardarUsuario}>
+                <input placeholder="Nombre de usuario" value={formUser.nombre} onChange={(event) => setFormUser({ ...formUser, nombre: event.target.value })} required />
+                <input type="email" placeholder="Correo electrónico" value={formUser.correo} onChange={(event) => setFormUser({ ...formUser, correo: event.target.value })} required />
+                <select value={formUser.rol} onChange={(event) => setFormUser({ ...formUser, rol: event.target.value })} required>
+                  <option value="CLIENTE">Cliente</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+                <input
+                  type="password"
+                  placeholder={formUser.id ? 'Nueva contraseña (opcional)' : 'Contraseña (mínimo 8 caracteres)'}
+                  value={formUser.password}
+                  onChange={(event) => setFormUser({ ...formUser, password: event.target.value })}
+                  minLength="8"
+                  required={!formUser.id}
+                />
+                <button type="submit">{formUser.id ? 'Actualizar Usuario' : 'Guardar Usuario'}</button>
+                <button type="button" onClick={() => setFormUser(usuarioVacio)} style={{ background: '#6c757d' }}>Cancelar</button>
+              </form>
 
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-              {usuarios.map(u => (
-                <tr key={u.id}>
-                  <td>{u.id}</td><td>{u.nombre}</td><td>{u.correo}</td><td>{u.rol}</td>
-                  <td>
-                    <button className="btn-warning" onClick={() => cargarEdicionUsuario(u)} style={{ marginRight: '5px' }}>Editar</button>
-                    <button className="btn-danger" onClick={() => eliminarUsuario(u.id)}>Eliminar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              <table>
+                <thead><tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr></thead>
+                <tbody>
+                  {usuarios.map((usuario) => (
+                    <tr key={usuario.id}>
+                      <td>{usuario.id}</td>
+                      <td>{usuario.nombre}</td>
+                      <td>{usuario.correo}</td>
+                      <td>{usuario.rol === 'ADMIN' ? 'Administrador' : 'Cliente'}</td>
+                      <td>
+                        <button className="btn-warning" onClick={() => setFormUser({ ...usuario, password: '' })} style={{ marginRight: '5px' }}>Editar</button>
+                        <button className="btn-danger" onClick={() => eliminarUsuario(usuario.id)}>Eliminar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

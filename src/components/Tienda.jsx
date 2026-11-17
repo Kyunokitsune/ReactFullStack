@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { products } from '../data/products.js';
+import { apiRequest } from '../services/api.js';
 import Carrito from './Carrito.jsx';
 import Contacto from './Contacto.jsx';
 import '../Estyles/Tienda.css';
 
 export default function Tienda() {
-  const [usuario, setUsuario] = useState(null);
+  const [usuario, setUsuario] = useState(() => JSON.parse(localStorage.getItem('usuarioActivo')));
+  const [products, setProducts] = useState([]);
+  const [errorProductos, setErrorProductos] = useState('');
   const [carrito, setCarrito] = useState(() => JSON.parse(localStorage.getItem('carrito') || '[]'));
   const [carritoAbierto, setCarritoAbierto] = useState(false);
   const navigate = useNavigate();
 
   // Leer sesión activa desde localStorage al cargar la página
   useEffect(() => {
-    const usuarioGuardado = JSON.parse(localStorage.getItem('usuarioActivo'));
-    if (usuarioGuardado) {
-      setUsuario(usuarioGuardado);
-    }
+    let activo = true;
+    apiRequest('/productos')
+      .then((catalogo) => {
+        if (activo) setProducts(catalogo);
+      })
+      .catch((error) => {
+        if (activo) setErrorProductos(error.message);
+      });
+    return () => {
+      activo = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -55,10 +64,10 @@ export default function Tienda() {
 
   const descargarCatalogo = async () => {
     const XLSX = await import('@e965/xlsx');
-    const filas = products.map(({ name, category, price }) => ({
-      Nombre: name,
-      Categoría: category,
-      Precio: price,
+    const filas = products.map(({ nombre, categoria, precio }) => ({
+      Nombre: nombre,
+      Categoría: categoria,
+      Precio: precio,
     }));
     const hoja = XLSX.utils.json_to_sheet(filas);
     hoja['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 14 }];
@@ -70,6 +79,7 @@ export default function Tienda() {
 
   const handleCerrarSesion = () => {
     localStorage.removeItem('usuarioActivo');
+    sessionStorage.removeItem('apiAuthorization');
     setUsuario(null);
   };
 
@@ -125,14 +135,16 @@ export default function Tienda() {
 
         <section id="productos">
           <h2>Productos Destacados</h2>
+          {errorProductos && <p className="registro-error" role="alert">{errorProductos}</p>}
+          {!errorProductos && products.length === 0 && <p>Cargando productos...</p>}
           <div className="grid-productos">
             {products.map((producto) => (
               <article key={producto.id} className="tarjeta-tienda">
-                <img src={producto.img} alt={producto.name} loading="lazy" />
-                <h3>{producto.name}</h3>
-                <p>{producto.category}</p>
-                <p>{producto.desc}</p>
-                <span>{producto.price.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                {producto.imagen && <img src={producto.imagen} alt={producto.nombre} loading="lazy" />}
+                <h3>{producto.nombre}</h3>
+                <p>{producto.categoria}</p>
+                <p>{producto.descripcion}</p>
+                <span>{Number(producto.precio).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
                 <button
                   className="btn-principal"
                   type="button"
