@@ -1,0 +1,1184 @@
+GUIA DE ESTUDIO DESDE CERO
+Proyecto: Tienda React + API REST Spring Boot + Oracle
+===========================================================================
+
+============================================================
+1. IDEA GENERAL DEL PROYECTO
+============================================================
+
+Este proyecto representa una tienda web completa formada por tres partes:
+
+1. Frontend React:
+   Permite navegar, registrarse, iniciar sesion, ver productos y administrar.
+
+2. Backend Spring Boot:
+   Expone una API REST y aplica seguridad, validaciones y reglas de negocio.
+
+3. Base de datos Oracle:
+   Guarda productos y usuarios de forma permanente.
+
+Recorrido general:
+
+   Usuario
+     -> componente React
+     -> fetch
+     -> api.js
+     -> proxy /api de Vite
+     -> controlador Spring Boot
+     -> repositorio JpaRepository
+     -> Hibernate
+     -> JDBC / ojdbc11
+     -> Oracle
+     -> JSON
+     -> React actualiza la pantalla
+
+Puertos locales usados:
+
+- Frontend React/Vite: normalmente http://localhost:5173
+- Backend Spring: http://localhost:8080
+- Oracle: normalmente el puerto 1521
+
+============================================================
+2. COMO SE CONSTRUYO EL PROYECTO DESDE HTML HACIA REACT
+============================================================
+
+2.1 HTML comun y sitios tradicionales
+
+En una pagina HTML tradicional el servidor devuelve una pagina y el navegador
+muestra directamente el contenido. Para cambiar datos suele recargarse la
+pagina completa o hacerse cambios manuales sobre el DOM.
+
+Ejemplo conceptual:
+
+   <p id="mensaje">Hola</p>
+
+   <script>
+     document.getElement...
+   </script>
+
+En este proyecto existian partes HTML, CSS y JavaScript separadas. Durante la
+migracion:
+
+- El documento HTML dejo de contener toda la interfaz.
+- index.html quedo como contenedor minimo.
+- El codigo visual se dividio en componentes React.
+- Los datos dinamicos pasaron a estados con useState.
+- Las operaciones iniciales pasaron a useEffect.
+- Las acciones del usuario se manejaron con funciones y eventos.
+
+2.2 index.html
+
+Archivo: index.html
+
+Su contenido principal es:
+
+   <div id="root"></div>
+   <script type="module" src="src/main.jsx"></script>
+
+El elemento root es un contenedor vacio. React toma ese elemento y coloca dentro
+todos los componentes.
+
+El documento HTML no contiene la tienda completa. React crea el contenido
+dinamicamente mediante JavaScript.
+
+2.3 src/main.jsx
+
+Archivo: src/main.jsx
+
+createRoot(document.getElementById("root")).render(...)
+
+Hace tres cosas:
+
+1. Busca el elemento HTML llamado root.
+2. Crea la raiz de React.
+3. Renderiza <App /> dentro del elemento.
+
+StrictMode ayuda a detectar patrones problematicos durante desarrollo.
+No modifica las tablas ni agrega rutas por si solo.
+
+src/main.jsx tambien carga Bootstrap CSS y JavaScript.
+
+2.4 Componentes React
+
+Un componente es una funcion que devuelve JSX.
+
+Ejemplo sencillo:
+
+   export default function Tienda() {
+     return (
+       <h1>Mi tienda</h1>
+     );
+   }
+
+Componentes actuales:
+
+- src/components/Tienda.jsx: catalogo, carrito y tienda.
+- src/components/Registro.jsx: registro e inicio de sesion.
+- src/components/Admin.jsx: administracion de productos y usuarios.
+- src/components/Carrito.jsx: visualizacion del carrito.
+- src/components/Contacto.jsx: formulario local de contacto.
+
+2.5 JSX
+
+JSX permite escribir una apariencia parecida a HTML dentro de JavaScript.
+
+Ejemplos:
+
+- className sustituye al atributo HTML class.
+- htmlFor sustituye a for.
+- {} permite insertar variables o expresiones JavaScript.
+- Las etiquetas deben cerrarse, incluso las que no tienen contenido.
+
+Ejemplo:
+
+   const nombre = "Juan";
+   return <h1>Hola, {nombre}</h1>;
+
+Se puede usar expresiones como map para transformar listas:
+
+   products.map((producto) => (
+     <article key={producto.id}>
+       <h3>{producto.nombre}</h3>
+     </article>
+   ))
+
+La propiedad key ayuda a React a identificar cada elemento repetido.
+
+============================================================
+3. COMO FUNCIONAN LAS FUNCIONES EN REACT
+============================================================
+
+3.1 Funciones normales
+
+Un componente puede declarar funciones internas:
+
+   const limpiarFormulario = () => {
+     setError("");
+   };
+
+La funcion setError cambia el estado del componente.
+Cuando cambia el estado, React vuelve a ejecutar el componente y actualiza
+la interfaz.
+
+3.2 Funciones ejecutadas por eventos
+
+Ejemplo:
+
+   <button onClick={handleCerrarSesion}>Salir</button>
+
+Cuando el usuario pulsa el boton, React llama handleCerrarSesion.
+
+Ejemplo con valor recibido:
+
+   <button onClick={() => agregarAlCarrito(producto)}>
+     Agregar
+   </button>
+
+Las flechas permiten enviar el producto correcto a la funcion.
+
+3.3 event.preventDefault()
+
+Un formulario HTML normalmente recarga la pagina al enviarlo.
+
+   const handleSubmit = (event) => {
+     event.preventDefault();
+     // Procesar el formulario sin recargar
+   };
+
+preventDefault evita la navegacion tradicional y permite trabajar mediante
+JavaScript.
+
+3.4 useState
+
+useState crea una variable con estado:
+
+   const [nombre, setNombre] = useState("");
+
+- nombre contiene el valor actual.
+- setNombre cambia el valor.
+- useState("") establece el valor inicial como cadena vacia.
+
+Ejemplo:
+
+   setNombre("Ana");
+
+React vuelve a dibujar el componente y reemplaza el estado anterior.
+
+3.5 useEffect
+
+useEffect ejecuta codigo despues del render:
+
+   useEffect(() => {
+     apiRequest("/productos")
+       .then((catalogo) => setProducts(catalogo));
+   }, []);
+
+El arreglo [] significa que el efecto se ejecuta una sola vez al montar
+el componente.
+
+Tienda.jsx utiliza useEffect para cargar productos desde la API.
+Admin.jsx utiliza Promise.all para cargar productos y usuarios simultaneamente.
+
+3.6 Estado, props y localStorage
+
+Estado:
+- Pertenece al componente.
+- Cambia mediante setters.
+- Causa una nueva representacion visual.
+
+Props:
+- Son datos recibidos por un componente desde su padre.
+- Carrito.jsx recibe abierto, carrito y funciones desde Tienda.jsx.
+
+LocalStorage:
+- Guarda texto en el navegador.
+- Conserva datos despues de cerrar el navegador.
+- Se usa para usuarioActivo y carrito.
+
+SessionStorage:
+- Conserva datos mientras dura la sesion de la pestaña.
+- Se usa para apiAuthorization.
+
+No guardar contrasenas reales en localStorage o sessionStorage.
+
+============================================================
+4. RUTAS DE REACT
+============================================================
+
+Archivo: src/App.jsx
+
+React Router controla las rutas del navegador.
+
+  /
+  -> Navigate redirige a /Tienda
+
+  /Tienda
+  -> Tienda
+
+  /Registro
+  -> Registro
+
+  /Admin
+  -> Admin
+
+Codigo base:
+
+   <BrowserRouter>
+     <Routes>
+       <Route path="/" element={<Navigate to="/Tienda" />} />
+       <Route path="/Tienda" element={<Tienda />} />
+       <Route path="/Registro" element={<Registro />} />
+       <Route path="/Admin" element={<Admin />} />
+     </Routes>
+   </BrowserRouter>
+
+Las rutas anteriorizadas pertenecen a React, no a archivos ni carpetas.
+Por ejemplo, /Tienda se presenta mediante el componente Tienda.jsx.
+
+Importante:
+Actualmente /Admin no tiene RouteGuard completo en App.jsx.
+La interfaz puede intentar mostrarse en el navegador, pero el backend debe
+rechazar cualquier operacion protegida si el usuario no es ADMIN.
+
+Recomendacion para estudiar:
+
+   if (!usuario) return <Navigate to="/Registro" />;
+   if (usuario.rol !== "admin") return <Navigate to="/Tienda" />;
+
+Esto mejora la experiencia visual, pero no sustituye a SecurityConfig.
+
+============================================================
+5. COMO SE AGREGO LA API
+============================================================
+
+5.1 Dependencias necesarias
+
+Archivo: backend/pom.xml
+
+Dependencias principales:
+
+- spring-boot-starter-web:
+  Permite crear controladores y respuestas HTTP.
+
+- spring-boot-starter-data-jpa:
+  Permite utilizar entidades y repositorios JPA.
+
+- spring-boot-starter-validation:
+  Permite validar DTO con anotaciones.
+
+- spring-boot-starter-security:
+  Permite autenticacion y autorizacion.
+
+- ojdbc11:
+  Driver JDBC para Oracle.
+
+- spring-security-crypto:
+  Permite cifrar contrasenas con BCrypt.
+
+El backend tiene Java 17 y Spring Boot 3.4.5.
+
+5.2 Punto de entrada del backend
+
+Archivo:
+backend/src/main/java/cl/tienda/api/TiendaApiApplication.java
+
+   @SpringBootApplication
+   public class TiendaApiApplication {
+       public static void main(String[] args) {
+           SpringApplication.run(TiendaApiApplication.class, args);
+       }
+   }
+
+Esta clase inicia Spring Boot y activa el escaneo de componentes.
+
+5.3 Que significa API REST
+
+REST organiza operaciones sobre recursos HTTP.
+
+- GET: consultar.
+- POST: crear.
+- PUT: actualizar.
+- DELETE: eliminar.
+
+Spring convierte los objetos Java en JSON automaticamente.
+
+============================================================
+6. ENDPOINTS COMPLETOS
+============================================================
+
+Prefijo general:
+
+   http://localhost:8080
+
+Cuando React usa apiRequest, usa:
+
+   /api
+
+Por ejemplo:
+
+   apiRequest("/productos")
+
+se convierte en:
+
+   GET http://localhost:8080/api/productos
+
+6.1 Productos
+
+Archivo:
+backend/src/main/java/cl/tienda/api/controller/ProductoController.java
+
+GET /api/productos
+- Publico.
+- Devuelve todos los productos.
+
+GET /api/productos/{id}
+- Publico.
+- Devuelve un producto por su identificador.
+
+POST /api/productos
+- Requiere ADMIN.
+- Crea un producto.
+- Estado esperado: 201 Created.
+
+PUT /api/productos/{id}
+- Requiere ADMIN.
+- Actualiza un producto.
+
+DELETE /api/productos/{id}
+- Requiere ADMIN.
+- Elimina un producto.
+- Estado esperado: 204 No Content.
+
+Ejemplo JSON:
+
+   {
+     "nombre": "Mouse Gamer",
+     "categoria": "Mouse",
+     "precio": 29990,
+     "imagen": "/productos/mouse.jpg",
+     "descripcion": "Mouse RGB"
+   }
+
+6.2 Usuarios
+
+Archivo:
+backend/src/main/java/cl/tienda/api/controller/UsuarioController.java
+
+POST /api/usuarios/registro
+- Publico.
+- Registra una cuenta con rol CLIENTE.
+
+GET /api/usuarios
+- Requiere ADMIN.
+- Lista usuarios.
+
+GET /api/usuarios/{id}
+- Requiere ADMIN.
+- Obtiene un usuario.
+
+POST /api/usuarios
+- Requiere ADMIN.
+- Crea un usuario y permite elegir ADMIN o CLIENTE.
+
+PUT /api/usuarios/{id}
+- Requiere ADMIN.
+- Actualiza un usuario.
+- Si password esta vacio, conserva el hash anterior.
+
+DELETE /api/usuarios/{id}
+- Requiere ADMIN.
+- Elimina el usuario.
+
+Ejemplo para crear usuario:
+
+   {
+     "nombre": "Administrador",
+     "correo": "admin@duoc.cl",
+     "rol": "ADMIN",
+     "password": "ClaveSegura123"
+   }
+
+6.3 Login
+
+Archivo:
+backend/src/main/java/cl/tienda/api/controller/AuthController.java
+
+POST /api/auth/login
+- Publico.
+- Recibe correo y password.
+- Devuelve UsuarioResponse si las credenciales son validas.
+
+Ejemplo:
+
+   {
+     "correo": "admin@duoc.cl",
+     "password": "Admin123*"
+   }
+
+Respuesta aproximada:
+
+   {
+     "id": 1,
+     "nombre": "Administrador",
+     "correo": "admin@duoc.cl",
+     "rol": "ADMIN"
+   }
+
+No devuelve el password ni su hash.
+
+============================================================
+7. COMO SE AGREGARON DTO, VALIDACION Y ERRORES
+============================================================
+
+Los DTO son objetos que describen el JSON recibido o enviado.
+
+Ubicacion:
+backend/src/main/java/cl/tienda/api/dto/
+
+- LoginRequest
+- ProductoRequest
+- UsuarioRegistroRequest
+- UsuarioAdminRequest
+- UsuarioResponse
+
+Ejemplo conceptual:
+
+   public record ProductoRequest(
+       @NotBlank String nombre,
+       @NotBlank String categoria,
+       @DecimalMin("0.01") BigDecimal precio,
+       String imagen,
+       String descripcion
+   ) {}
+
+Anotaciones frecuentes:
+
+- @Valid: activa las validaciones.
+- @NotBlank: rechaza texto vacio.
+- @Email: exige formato de correo.
+- @Size: limita longitud.
+- @DecimalMin: establece un minimo.
+
+La validacion frontend mejora la experiencia.
+La validacion backend es obligatoria porque las solicitudes pueden enviarse
+directamente sin pasar por el navegador.
+
+Errores HTTP:
+
+- 400 Bad Request: datos invalidos.
+- 401 Unauthorized: no hay autenticacion valida.
+- 403 Forbidden: no tiene el rol necesario.
+- 404 Not Found: el recurso no existe.
+- 409 Conflict: se produjo un conflicto, por ejemplo correo duplicado.
+
+ApiExceptionHandler transforma excepciones Java en JSON.
+
+============================================================
+8. COMO SE AGREGO LA BASE DE DATOS ORACLE
+============================================================
+
+8.1 Configuracion
+
+Archivo:
+backend/src/main/resources/application.properties
+
+   spring.datasource.url=${ORACLE_URL:jdbc:oracle:thin:@localhost:1521/XEPDB1}
+   spring.datasource.username=${ORACLE_USER:}
+   spring.datasource.password=${ORACLE_PASSWORD:}
+   spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+
+Variables:
+
+- ORACLE_URL: direccion JDBC de Oracle.
+- ORACLE_USER: usuario tecnico de conexion.
+- ORACLE_PASSWORD: clave del usuario tecnico.
+
+Configuracion JPA:
+
+   spring.jpa.hibernate.ddl-auto=update
+   spring.jpa.show-sql=false
+   spring.jpa.open-in-view=false
+   spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.OracleDialect
+
+ddl-auto=update permite ajustar tablas cuando arrancan entidades JPA.
+No reemplaza herramientas profesionales de migracion.
+
+8.2 Entidades
+
+Producto.java representa la tabla productos.
+
+Campos:
+- id
+- nombre
+- categoria
+- precio
+- imagen
+- descripcion
+
+Usuario.java representa la tabla usuarios.
+
+Campos:
+- id
+- nombre
+- correo
+- password
+- rol
+
+Anotaciones:
+- @Entity: declara una entidad JPA.
+- @Table: indica el nombre de tabla.
+- @Id: define la clave primaria.
+- @GeneratedValue: define como se genera el identificador.
+- @Column(unique=true): impide que el correo se repita.
+
+El precio usa BigDecimal para evitar problemas de precision decimal.
+
+8.3 Repositorios
+
+Ejemplo:
+
+   public interface ProductoRepository
+       extends JpaRepository<Producto, Long> {}
+
+Spring crea automaticamente metodos como:
+
+- findAll()
+- findById(id)
+- save(entidad)
+- delete(entidad)
+- count()
+
+UsuarioRepository agrega:
+
+- existsByCorreoIgnoreCase(correo)
+- findByCorreoIgnoreCase(correo)
+
+8.4 Conexion en conjunto
+
+   Controlador
+     -> repositorio
+     -> Spring Data JPA
+     -> Hibernate
+     -> ojdbc11
+     -> Oracle
+
+Hibernate traduce operaciones Java a SQL compatible con Oracle.
+
+8.5 Usuario tecnico y administrador de tienda
+
+Son cuentas diferentes:
+
+- tienda_app / ORACLE_PASSWORD:
+  Cuenta tecnica usada por Java para conectarse a Oracle.
+
+- admin@duoc.cl / APP_ADMIN_PASSWORD:
+  Cuenta de usuario creada dentro de la tienda.
+
+No confundir ORACLE_PASSWORD con la clave usada para iniciar sesion web.
+
+============================================================
+9. CREACION DEL USUARIO ADMINISTRADOR
+============================================================
+
+DataInitializer se ejecuta al iniciar Spring:
+
+- Inserta ocho productos si la tabla esta vacia.
+- Crea el administrador si APP_ADMIN_EMAIL y APP_ADMIN_PASSWORD estan configurados.
+- Cifra la clave del administrador con BCrypt.
+- No modifica la clave de un administrador existente.
+
+Credenciales guardadas originalmente en los TXT:
+
+- Usuario Oracle: tienda_app
+- Clave Oracle registrada en los TXT: Muki479*
+- Correo administrador: admin@duoc.cl
+- Clave administrador registrada en los TXT: Admin123*
+
+Estas credenciales deben considerarse credenciales reales o compartidas.
+No deben publicarse, subirse a GitHub ni incluirse en demostraciones publicas.
+Cambiar Muki479* o Admin123* en produccion y actualizar las variables de entorno.
+
+Nota:
+La clave de Oracle es independiente de la clave del administrador.
+
+Para crear otro administrador desde /Admin:
+
+1. Iniciar sesion como administrador.
+2. Abrir /Admin.
+3. Seleccionar Usuarios.
+4. Completar nombre y correo.
+5. Elegir rol ADMIN.
+6. Escribir una clave de al menos ocho caracteres.
+7. Pulsar Guardar Usuario.
+
+El backend verifica el rol, cifra el password y guarda el usuario.
+
+============================================================
+10. COMO SE AGREGÓ SPRING SECURITY
+============================================================
+
+Archivo:
+backend/src/main/java/cl/tienda/api/config/SecurityConfig.java
+
+Configuracion conceptual:
+
+- OPTIONS: permitido.
+- GET /api/productos/**: publico.
+- POST /api/usuarios/registro: publico.
+- POST /api/auth/login: publico.
+- /api/usuarios/**: requiere ADMIN.
+- POST, PUT y DELETE de /api/productos/**: requieren ADMIN.
+
+10.1 Autenticacion
+
+AuthenticationManager compara las credenciales enviadas.
+UsuarioDetailsService busca el correo en UsuarioRepository.
+BCrypt verifica si la clave coincide con el hash almacenado.
+
+No se puede descifrar un hash BCrypt.
+Cada vez que se inicia sesion se compara la clave nuevamente.
+
+10.2 Autorizacion
+
+Autenticacion = demostrar quien es el usuario.
+Autorizacion = decidir que puede hacer.
+
+La entidad Usuario guarda el rol como:
+
+- ADMIN
+- CLIENTE
+
+Spring convierte el rol en una autoridad como ROLE_ADMIN.
+
+10.3 HTTP Basic
+
+Este proyecto no usa JWT.
+
+api.js guarda:
+
+   correo:password
+
+convertido a Base64 en sessionStorage.
+
+Base64 no es cifrado.
+Una cadena Base64 puede ser decodificada facilmente.
+
+La cabecera enviada es:
+
+   Authorization: Basic <correo:password-codificado>
+
+En produccion se debe usar HTTPS.
+
+============================================================
+11. COMO FUNCIONA src/services/api.js
+============================================================
+
+Archivo: src/services/api.js
+
+API_URL vale:
+
+   const API_URL = "/api";
+
+apiRequest realiza:
+
+1. Agrega /api a la ruta.
+2. Agrega Content-Type application/json si hay cuerpo.
+3. Agrega Authorization Basic si existen credenciales.
+4. Ejecuta fetch.
+5. Convierte la respuesta a JSON.
+6. Devuelve null para respuesta 204.
+7. Lanza Error si la respuesta HTTP no fue exitosa.
+
+Ejemplo:
+
+   apiRequest("/usuarios/registro", {
+     method: "POST",
+     body: JSON.stringify({
+       nombre,
+       correo,
+       password
+     })
+   });
+
+guardarCredenciales usa TextEncoder y Base64:
+
+   correo:password
+   -> bytes
+   -> btoa(...)
+   -> sessionStorage
+
+============================================================
+12. FLUJOS PRINCIPALES
+============================================================
+
+12.1 Registrar usuario
+
+1. Registro.jsx valida nombre, correo y password.
+2. Envia POST /api/usuarios/registro.
+3. UsuarioController normaliza el correo.
+4. Comprueba que no exista.
+5. PasswordEncoder convierte password a BCrypt.
+6. Crea Usuario con rol CLIENTE.
+7. Guarda el usuario en Oracle.
+8. UsuarioResponse devuelve datos sin password.
+9. Registro.jsx llama luego /api/auth/login.
+
+12.2 Iniciar sesion
+
+1. Registro.jsx envia correo y password.
+2. AuthController normaliza el correo.
+3. AuthenticationManager autentica.
+4. UsuarioDetailsService consulta UsuarioRepository.
+5. BCrypt verifica el hash.
+6. Spring devuelve UsuarioResponse.
+7. React guarda usuarioActivo en localStorage.
+8. React guarda apiAuthorization en sessionStorage.
+9. React dirige ADMIN a /Admin y CLIENTE a /Tienda.
+
+12.3 Cargar catalogo
+
+1. Tienda.jsx se monta.
+2. useEffect ejecuta apiRequest("/productos").
+3. api.js usa GET /api/productos.
+4. Vite redirige /api al puerto 8080.
+5. ProductoController llama repository.findAll().
+6. Hibernate consulta Oracle.
+7. Spring convierte la lista a JSON.
+8. Tienda.jsx coloca los datos en products.
+9. React crea las tarjetas mediante map().
+
+12.4 Crear producto desde administrador
+
+1. Admin.jsx valida el formulario.
+2. Convierte precio a numero.
+3. Envia POST /api/productos.
+4. api.js agrega Authorization Basic.
+5. Spring verifica que el usuario sea ADMIN.
+6. ProductoController valida ProductoRequest.
+7. Crea una entidad Producto.
+8. ProductoRepository.save() guarda en Oracle.
+9. React agrega el producto al estado de productos.
+
+12.5 Modificar o eliminar
+
+Modificar:
+
+   PUT /api/productos/{id}
+   PUT /api/usuarios/{id}
+
+Eliminar:
+
+   DELETE /api/productos/{id}
+   DELETE /api/usuarios/{id}
+
+React modifica el arreglo local despues de una respuesta exitosa.
+
+============================================================
+13. CARRITO
+============================================================
+
+Archivo: src/components/Carrito.jsx
+
+Tienda.jsx controla el arreglo carrito.
+
+El arreglo se guarda en:
+
+   localStorage["carrito"]
+
+Operaciones:
+
+- Agregar: suma cantidad si el producto ya existe.
+- Sumar: incrementa cantidad.
+- Restar: disminuye cantidad.
+- Eliminar: retira el producto.
+
+Ejemplo:
+
+   const productoEnCarrito = carritoActual.find(
+     (item) => item.id === producto.id
+   );
+
+El total se calcula:
+
+   cantidad * precio
+
+El carrito no se guarda en Oracle.
+No crea una compra ni procesa pago.
+
+============================================================
+14. CONTACTO
+============================================================
+
+Archivo: src/components/Contacto.jsx
+
+El formulario:
+
+- Valida nombre.
+- Valida correo.
+- Valida mensaje.
+- Permite solo Gmail y dominios Duoc.
+- Resetea los campos si el resultado es correcto.
+- Muestra alert("Formulario enviado").
+
+No utiliza fetch.
+No registra el mensaje en Oracle.
+No envia un correo real.
+
+============================================================
+15. IMAGENES
+============================================================
+
+Las imagenes estan en:
+
+   public/productos/
+
+Las rutas web se escriben como:
+
+   /productos/mouse.jpg
+
+No confundir ruta de disco con ruta web:
+
+Archivo real:
+   public/productos/mouse.jpg
+
+Ruta guardada en el producto:
+   /productos/mouse.jpg
+
+La tienda usa esta ruta para crear:
+
+   <img src="/productos/mouse.jpg" />
+
+Si falta el archivo, el navegador puede mostrar una imagen rota.
+
+============================================================
+16. COMANDOS WINDOWS
+============================================================
+
+16.1 Instalar Node.js y paquetes frontend
+
+Desde la raiz del proyecto:
+
+   npm.cmd install
+
+Esto lee package.json y crea node_modules.
+
+Iniciar React:
+
+   npm.cmd run dev
+
+Crear compilacion frontend:
+
+   npm.cmd run build
+
+Ejecutar lint:
+
+   npm.cmd run lint
+
+Ejecutar vista previa de build:
+
+   npm.cmd run preview
+
+16.2 Iniciar Oracle
+
+Antes de iniciar Spring:
+
+- Oracle Database debe estar activo.
+- Oracle Listener debe estar activo.
+- El usuario tienda_app debe existir.
+- El servicio XEPDB1 debe estar disponible.
+
+Puedes revisar Servicios de Windows.
+SQL Developer administra o prueba Oracle, pero no inicia el motor.
+
+16.3 Crear el usuario Oracle
+
+Desde SQL Developer o SQL*Plus, conectado como SYSTEM:
+
+   CREATE USER tienda_app IDENTIFIED BY "Muki479*";
+   GRANT CREATE SESSION TO tienda_app;
+   GRANT CREATE TABLE TO tienda_app;
+   GRANT CREATE SEQUENCE TO tienda_app;
+   ALTER USER tienda_app QUOTA UNLIMITED ON USERS;
+
+Las operaciones anteriores deben ejecutarse solo una vez.
+
+Si existe un usuario actual con otra clave, utiliza su clave real.
+
+16.4 Iniciar Spring Boot
+
+Desde la carpeta backend:
+
+   cd /d C:\Users\valde\Escritorio\Uni\Unism2_año2\ReactFullStack\backend
+
+PowerShell:
+
+   $env:ORACLE_URL="jdbc:oracle:thin:@localhost:1521/XEPDB1"
+   $env:ORACLE_USER="tienda_app"
+   $env:ORACLE_PASSWORD="Muki479*"
+   $env:APP_ADMIN_EMAIL="admin@duoc.cl"
+   $env:APP_ADMIN_PASSWORD="Admin123*"
+
+   mvn spring-boot:run
+
+Las variables existen solo en esa terminal.
+Si cierras la terminal, debes volver a definirlas.
+
+No usar SPRING_PROFILES_ACTIVE si no existe un perfil configurado.
+
+16.5 Ejecutar el backend con Maven
+
+Probar:
+
+   mvn test
+
+Empaquetar:
+
+   mvn clean package
+
+El JAR generado quedara aproximadamente en:
+
+   backend\target\tienda-api-1.0.0.jar
+
+Ejecutar:
+
+   java -jar target\tienda-api-1.0.0.jar
+
+16.6 Iniciar frontend
+
+Abre otra terminal en la raiz:
+
+   cd /d C:\Users\valde\Escritorio\Uni\Unism2_año2\ReactFullStack
+   npm.cmd run dev
+
+Mantener backend y frontend abiertos al mismo tiempo.
+
+============================================================
+17. TABLA DE RUTAS FRONTEND Y BACKEND
+============================================================
+
+Frontend:
+
+RUTA          COMPONENTE       QUE HACE
+/             Navigate         Redirige a /Tienda
+/Tienda       Tienda           Catalogo y carrito
+/Registro     Registro         Registro y login
+/Admin        Admin            CRUD de productos y usuarios
+
+Backend:
+
+METODO  RUTA                         ACCESO
+POST    /api/auth/login              Publico
+POST    /api/usuarios/registro       Publico
+GET     /api/productos               Publico
+GET     /api/productos/{id}          Publico
+POST    /api/productos               ADMIN
+PUT     /api/productos/{id}          ADMIN
+DELETE  /api/productos/{id}          ADMIN
+GET     /api/usuarios                ADMIN
+GET     /api/usuarios/{id}           ADMIN
+POST    /api/usuarios                ADMIN
+PUT     /api/usuarios/{id}           ADMIN
+DELETE  /api/usuarios/{id}           ADMIN
+
+============================================================
+18. ALMACENAMIENTO DEL NAVEGADOR
+============================================================
+
+localStorage:
+
+- usuarioActivo
+- carrito
+
+Persisten entre recargas y cierres del navegador hasta que se eliminen.
+
+sessionStorage:
+
+- apiAuthorization
+
+Se usa para guardar temporalmente credenciales codificadas en Base64.
+
+No almacena contrasenas sin cifrado en el sistema backend.
+Las contrasenas reales se cifran con BCrypt en Oracle.
+
+============================================================
+19. ARCHIVOS IMPORTANTES
+============================================================
+
+Raiz frontend:
+
+- index.html
+- package.json
+- vite.config.js
+- src/main.jsx
+- src/App.jsx
+- src/services/api.js
+
+Componentes:
+
+- src/components/Tienda.jsx
+- src/components/Registro.jsx
+- src/components/Admin.jsx
+- src/components/Carrito.jsx
+- src/components/Contacto.jsx
+
+Backend:
+
+- backend/pom.xml
+- backend/src/main/java/cl/tienda/api/TiendaApiApplication.java
+- backend/src/main/resources/application.properties
+- backend/src/main/java/cl/tienda/api/config/SecurityConfig.java
+- backend/src/main/java/cl/tienda/api/config/DataInitializer.java
+- backend/src/main/java/cl/tienda/api/controller/
+- backend/src/main/java/cl/tienda/api/dto/
+- backend/src/main/java/cl/tienda/api/model/
+- backend/src/main/java/cl/tienda/api/repository/
+- backend/src/main/java/cl/tienda/api/service/
+
+============================================================
+20. ERRORES FRECUENTES
+============================================================
+
+Frontend no carga:
+- Ejecutar npm.cmd install.
+- Ejecutar npm.cmd run dev.
+- Revisar el puerto informado por Vite.
+
+Error 403:
+- El usuario no tiene rol ADMIN.
+- Verificar usuarioActivo y apiAuthorization.
+- Ejecutar login con una cuenta ADMIN.
+
+Error 401:
+- Credenciales incorrectas.
+- Contraseña incorrecta.
+- Usuario no registrado.
+
+Error de conexion con Oracle:
+- Oracle no esta iniciado.
+- ORACLE_URL es incorrecta.
+- ORACLE_USER no existe.
+- ORACLE_PASSWORD no coincide.
+- Oracle Listener no esta activo.
+
+Imagen rota:
+- La imagen no existe en public/productos.
+- La ruta guardada no coincide con el nombre del archivo.
+
+Variables no reconocidas:
+- Las variables del PowerShell pueden haberse definido en otra terminal.
+- Definirlas nuevamente antes de mvn spring-boot:run.
+
+============================================================
+21. PREGUNTAS FRECUENTES
+============================================================
+
+¿React guarda datos permanentes?
+No. React usa estados y almacenamiento del navegador. Oracle guarda datos.
+
+¿localStorage es una base de datos segura?
+No. Es almacenamiento temporal de navegador y puede ser modificado.
+
+¿Qué diferencia hay entre HTML y React?
+HTML describe elementos. React administra componentes, estados y actualizaciones.
+
+¿Qué hace useState?
+Guarda un valor que cambia y vuelve a renderizar el componente.
+
+¿Qué hace useEffect?
+Ejecuta un efecto despues del render, como cargar datos desde una API.
+
+¿Qué hace fetch?
+Realiza una solicitud HTTP desde JavaScript.
+
+¿Qué hace Spring Boot?
+Inicia un servidor HTTP, expone controladores y administra dependencias.
+
+¿Qué hace JPA?
+Proporciona acceso a datos mediante entidades y repositorios.
+
+¿Qué hace Hibernate?
+Implementa JPA y convierte operaciones Java en SQL.
+
+¿Qué hace BCrypt?
+Cifra contrasenas con una funcion hash segura y genera una sal.
+
+¿Qué hace HTTP Basic?
+Envia usuario y clave en cada solicitud protegida.
+
+¿Por qué no basta con ocultar /Admin en React?
+Porque el navegador puede cambiar el JavaScript o llamar directamente a la API.
+La autorizacion real debe hacerse en Spring Security.
+
+¿Qué devuelve UsuarioResponse?
+id, nombre, correo y rol.
+No devuelve password ni su hash.
+
+¿Por qué se fuerza rol CLIENTE al registrarse?
+Para evitar que una persona se registre como administrador.
+
+¿Por qué se usa BigDecimal para precio?
+Para evitar perder precision con operaciones monetarias.
+
+============================================================
+22. CAMINO DE ESTUDIO RECOMENDADO
+============================================================
+
+1. Leer index.html y src/main.jsx.
+2. Revisar src/App.jsx y las rutas.
+3. Leer src/components/Tienda.jsx.
+4. Entender useState, useEffect y map().
+5. Leer src/services/api.js.
+6. Leer vite.config.js.
+7. Revisar los controladores Spring.
+8. Revisar los DTO y las validaciones.
+9. Revisar las entidades y repositorios.
+10. Revisar application.properties.
+11. Revisar SecurityConfig.
+12. Revisar UsuarioDetailsService.
+13. Ejecutar todo el flujo de registro.
+14. Ejecutar todo el flujo de login.
+15. Ejecutar el CRUD de productos.
+16. Ejecutar el CRUD de usuarios.
+17. Practicar explicar el recorrido completo sin mirar el codigo.
+
+Fin de la guia.
