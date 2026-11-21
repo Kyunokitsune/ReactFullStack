@@ -459,12 +459,6 @@ backend/src/main/resources/application.properties
    spring.datasource.password=${ORACLE_PASSWORD:}
    spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
 
-Variables:
-
-- ORACLE_URL: direccion JDBC de Oracle.
-- ORACLE_USER: usuario tecnico de conexion.
-- ORACLE_PASSWORD: clave del usuario tecnico.
-
 Configuracion JPA:
 
    spring.jpa.hibernate.ddl-auto=update
@@ -536,70 +530,22 @@ UsuarioRepository agrega:
 
 Hibernate traduce operaciones Java a SQL compatible con Oracle.
 
-8.5 Usuario tecnico y administrador de tienda
-
-Son cuentas diferentes:
-
-- tienda_app / ORACLE_PASSWORD:
-  Cuenta tecnica usada por Java para conectarse a Oracle.
-
-- admin@duoc.cl / APP_ADMIN_PASSWORD:
-  Cuenta de usuario creada dentro de la tienda.
-
-No confundir ORACLE_PASSWORD con la clave usada para iniciar sesion web.
-
 ============================================================
 9. CREACION DEL USUARIO ADMINISTRADOR
 ============================================================
 
-DataInitializer se ejecuta al iniciar Spring:
-
-- Inserta ocho productos si la tabla esta vacia.
-- Crea el administrador si APP_ADMIN_EMAIL y APP_ADMIN_PASSWORD estan configurados.
-- Cifra la clave del administrador con BCrypt.
-- No modifica la clave de un administrador existente.
-
 Credenciales guardadas originalmente en los TXT:
 
+- Cifra la clave del administrador con BCrypt.
+- No modifica la clave de un administrador existente.
 - Usuario Oracle: tienda_app
 - Clave Oracle registrada en los TXT: Muki479*
 - Correo administrador: admin@duoc.cl
 - Clave administrador registrada en los TXT: Admin123*
 
-Estas credenciales deben considerarse credenciales reales o compartidas.
-No deben publicarse, subirse a GitHub ni incluirse en demostraciones publicas.
-Cambiar Muki479* o Admin123* en produccion y actualizar las variables de entorno.
-
-Nota:
-La clave de Oracle es independiente de la clave del administrador.
-
-Para crear otro administrador desde /Admin:
-
-1. Iniciar sesion como administrador.
-2. Abrir /Admin.
-3. Seleccionar Usuarios.
-4. Completar nombre y correo.
-5. Elegir rol ADMIN.
-6. Escribir una clave de al menos ocho caracteres.
-7. Pulsar Guardar Usuario.
-
-El backend verifica el rol, cifra el password y guarda el usuario.
-
 ============================================================
 10. COMO SE AGREGÓ SPRING SECURITY
 ============================================================
-
-Archivo:
-backend/src/main/java/cl/tienda/api/config/SecurityConfig.java
-
-Configuracion conceptual:
-
-- OPTIONS: permitido.
-- GET /api/productos/**: publico.
-- POST /api/usuarios/registro: publico.
-- POST /api/auth/login: publico.
-- /api/usuarios/**: requiere ADMIN.
-- POST, PUT y DELETE de /api/productos/**: requieren ADMIN.
 
 10.1 Autenticacion
 
@@ -609,37 +555,6 @@ BCrypt verifica si la clave coincide con el hash almacenado.
 
 No se puede descifrar un hash BCrypt.
 Cada vez que se inicia sesion se compara la clave nuevamente.
-
-10.2 Autorizacion
-
-Autenticacion = demostrar quien es el usuario.
-Autorizacion = decidir que puede hacer.
-
-La entidad Usuario guarda el rol como:
-
-- ADMIN
-- CLIENTE
-
-Spring convierte el rol en una autoridad como ROLE_ADMIN.
-
-10.3 HTTP Basic
-
-Este proyecto no usa JWT.
-
-api.js guarda:
-
-   correo:password
-
-convertido a Base64 en sessionStorage.
-
-Base64 no es cifrado.
-Una cadena Base64 puede ser decodificada facilmente.
-
-La cabecera enviada es:
-
-   Authorization: Basic <correo:password-codificado>
-
-En produccion se debe usar HTTPS.
 
 ============================================================
 11. COMO FUNCIONA src/services/api.js
@@ -680,7 +595,7 @@ guardarCredenciales usa TextEncoder y Base64:
    -> sessionStorage
 
 ============================================================
-12. FLUJOS PRINCIPALES
+Acciones a poder realizar 
 ============================================================
 
 12.1 Registrar usuario
@@ -731,13 +646,6 @@ guardarCredenciales usa TextEncoder y Base64:
 8. ProductoRepository.save() guarda en Oracle.
 9. React agrega el producto al estado de productos.
 
-12.5 Modificar o eliminar
-
-Modificar:
-
-   PUT /api/productos/{id}
-   PUT /api/usuarios/{id}
-
 Eliminar:
 
    DELETE /api/productos/{id}
@@ -757,13 +665,6 @@ El arreglo se guarda en:
 
    localStorage["carrito"]
 
-Operaciones:
-
-- Agregar: suma cantidad si el producto ya existe.
-- Sumar: incrementa cantidad.
-- Restar: disminuye cantidad.
-- Eliminar: retira el producto.
-
 Ejemplo:
 
    const productoEnCarrito = carritoActual.find(
@@ -773,9 +674,6 @@ Ejemplo:
 El total se calcula:
 
    cantidad * precio
-
-El carrito no se guarda en Oracle.
-No crea una compra ni procesa pago.
 
 ============================================================
 14. CONTACTO
@@ -791,10 +689,6 @@ El formulario:
 - Permite solo Gmail y dominios Duoc.
 - Resetea los campos si el resultado es correcto.
 - Muestra alert("Formulario enviado").
-
-No utiliza fetch.
-No registra el mensaje en Oracle.
-No envia un correo real.
 
 ============================================================
 15. IMAGENES
@@ -842,14 +736,6 @@ Crear compilacion frontend:
 
    npm.cmd run build
 
-Ejecutar lint:
-
-   npm.cmd run lint
-
-Ejecutar vista previa de build:
-
-   npm.cmd run preview
-
 16.2 Iniciar Oracle
 
 Antes de iniciar Spring:
@@ -866,7 +752,7 @@ SQL Developer administra o prueba Oracle, pero no inicia el motor.
 
 Desde SQL Developer o SQL*Plus, conectado como SYSTEM:
 
-   CREATE USER tienda_app IDENTIFIED BY "Muki479*";
+   CREATE USER tienda_app IDENTIFIED BY "Muki479*"  o otra contraseña;
    GRANT CREATE SESSION TO tienda_app;
    GRANT CREATE TABLE TO tienda_app;
    GRANT CREATE SEQUENCE TO tienda_app;
@@ -894,26 +780,6 @@ PowerShell:
 
 Las variables existen solo en esa terminal.
 Si cierras la terminal, debes volver a definirlas.
-
-No usar SPRING_PROFILES_ACTIVE si no existe un perfil configurado.
-
-16.5 Ejecutar el backend con Maven
-
-Probar:
-
-   mvn test
-
-Empaquetar:
-
-   mvn clean package
-
-El JAR generado quedara aproximadamente en:
-
-   backend\target\tienda-api-1.0.0.jar
-
-Ejecutar:
-
-   java -jar target\tienda-api-1.0.0.jar
 
 16.6 Iniciar frontend
 
@@ -1005,40 +871,6 @@ Backend:
 - backend/src/main/java/cl/tienda/api/model/
 - backend/src/main/java/cl/tienda/api/repository/
 - backend/src/main/java/cl/tienda/api/service/
-
-============================================================
-20. ERRORES FRECUENTES
-============================================================
-
-Frontend no carga:
-- Ejecutar npm.cmd install.
-- Ejecutar npm.cmd run dev.
-- Revisar el puerto informado por Vite.
-
-Error 403:
-- El usuario no tiene rol ADMIN.
-- Verificar usuarioActivo y apiAuthorization.
-- Ejecutar login con una cuenta ADMIN.
-
-Error 401:
-- Credenciales incorrectas.
-- Contraseña incorrecta.
-- Usuario no registrado.
-
-Error de conexion con Oracle:
-- Oracle no esta iniciado.
-- ORACLE_URL es incorrecta.
-- ORACLE_USER no existe.
-- ORACLE_PASSWORD no coincide.
-- Oracle Listener no esta activo.
-
-Imagen rota:
-- La imagen no existe en public/productos.
-- La ruta guardada no coincide con el nombre del archivo.
-
-Variables no reconocidas:
-- Las variables del PowerShell pueden haberse definido en otra terminal.
-- Definirlas nuevamente antes de mvn spring-boot:run.
 
 ============================================================
 21. PREGUNTAS FRECUENTES
