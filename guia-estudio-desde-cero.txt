@@ -343,7 +343,6 @@ REST organiza operaciones sobre recursos HTTP.
 Spring convierte los objetos Java en JSON automaticamente.
 
 ============================================================
-6. ENDPOINTS COMPLETOS
 ============================================================
 
 Prefijo general:
@@ -398,73 +397,6 @@ Ejemplo JSON:
      "imagen": "/productos/mouse.jpg",
      "descripcion": "Mouse RGB"
    }
-
-6.2 Usuarios
-
-Archivo:
-backend/src/main/java/cl/tienda/api/controller/UsuarioController.java
-
-POST /api/usuarios/registro
-- Publico.
-- Registra una cuenta con rol CLIENTE.
-
-GET /api/usuarios
-- Requiere ADMIN.
-- Lista usuarios.
-
-GET /api/usuarios/{id}
-- Requiere ADMIN.
-- Obtiene un usuario.
-
-POST /api/usuarios
-- Requiere ADMIN.
-- Crea un usuario y permite elegir ADMIN o CLIENTE.
-
-PUT /api/usuarios/{id}
-- Requiere ADMIN.
-- Actualiza un usuario.
-- Si password esta vacio, conserva el hash anterior.
-
-DELETE /api/usuarios/{id}
-- Requiere ADMIN.
-- Elimina el usuario.
-
-Ejemplo para crear usuario:
-
-   {
-     "nombre": "Administrador",
-     "correo": "admin@duoc.cl",
-     "rol": "ADMIN",
-     "password": "ClaveSegura123"
-   }
-
-6.3 Login
-
-Archivo:
-backend/src/main/java/cl/tienda/api/controller/AuthController.java
-
-POST /api/auth/login
-- Publico.
-- Recibe correo y password.
-- Devuelve UsuarioResponse si las credenciales son validas.
-
-Ejemplo:
-
-   {
-     "correo": "admin@duoc.cl",
-     "password": "Admin123*"
-   }
-
-Respuesta aproximada:
-
-   {
-     "id": 1,
-     "nombre": "Administrador",
-     "correo": "admin@duoc.cl",
-     "rol": "ADMIN"
-   }
-
-No devuelve el password ni su hash.
 
 ============================================================
 7. COMO SE AGREGARON DTO, VALIDACION Y ERRORES

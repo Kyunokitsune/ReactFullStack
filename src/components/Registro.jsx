@@ -56,7 +56,11 @@ export default function Registro() {
       }));
       navigate(usuario.rol === 'ADMIN' ? '/Admin' : '/Tienda');
     } catch (requestError) {
-      setError(requestError.message);
+      if (modo === 'login' && requestError.status === 401) {
+        setError('Usuario o contraseña incorrectos');
+      } else {
+        setError(requestError.message);
+      }
     } finally {
       setEnviando(false);
     }
