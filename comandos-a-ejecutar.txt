@@ -1,0 +1,19 @@
+COMANDOS A EJECUTAR
+
+BASE DE DATOS Y SPRING
+
+Abre PowerShell en la carpeta backend y ejecuta:
+
+$env:ORACLE_URL = "jdbc:oracle:thin:@localhost:1521/XEPDB1"
+$env:ORACLE_USER = "tienda_app"
+$env:ORACLE_PASSWORD = "Muki479*"
+$env:APP_ADMIN_EMAIL = "admin@duoc.cl"
+$env:APP_ADMIN_PASSWORD = "Admin123*"
+mvn spring-boot:run
+
+
+FRONTEND
+
+Abre otra terminal en la carpeta principal del proyecto y ejecuta:
+
+npm.cmd run dev
