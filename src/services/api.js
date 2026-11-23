@@ -1,17 +1,18 @@
 const API_URL = '/api';
 
 function authorizationHeader() {
-  const credentials = sessionStorage.getItem('apiAuthorization');
-  return credentials ? { Authorization: `Basic ${credentials}` } : {};
+  const token = sessionStorage.getItem('apiToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export function guardarCredenciales(correo, password) {
-  const bytes = new TextEncoder().encode(`${correo}:${password}`);
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  sessionStorage.setItem('apiAuthorization', btoa(binary));
+export function guardarSesion(token, usuario) {
+  sessionStorage.setItem('apiToken', token);
+  localStorage.setItem('usuarioActivo', JSON.stringify(usuario));
+}
+
+export function cerrarSesion() {
+  sessionStorage.removeItem('apiToken');
+  localStorage.removeItem('usuarioActivo');
 }
 
 export async function apiRequest(path, options = {}) {

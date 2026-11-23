@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiRequest, guardarCredenciales } from '../services/api.js';
+import { apiRequest, guardarSesion } from '../services/api.js';
 import '../Estyles/Tienda.css';
 
 export default function Registro() {
@@ -43,18 +43,18 @@ export default function Registro() {
         });
       }
 
-      const usuario = await apiRequest('/auth/login', {
+      const respuesta = await apiRequest('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ correo: correoNormalizado, password }),
       });
 
-      guardarCredenciales(correoNormalizado, password);
-      localStorage.setItem('usuarioActivo', JSON.stringify({
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        rol: usuario.rol.toLowerCase(),
-      }));
-      navigate(usuario.rol === 'ADMIN' ? '/Admin' : '/Tienda');
+      const usuarioActivo = {
+        nombre: respuesta.usuario.nombre,
+        correo: respuesta.usuario.correo,
+        rol: respuesta.usuario.rol.toLowerCase(),
+      };
+      guardarSesion(respuesta.token, usuarioActivo);
+      navigate(respuesta.usuario.rol === 'ADMIN' ? '/Admin' : '/Tienda');
     } catch (requestError) {
       if (modo === 'login' && requestError.status === 401) {
         setError('Usuario o contraseña incorrectos');

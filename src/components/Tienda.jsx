@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiRequest } from '../services/api.js';
+import { apiRequest, cerrarSesion } from '../services/api.js';
 import Carrito from './Carrito.jsx';
 import Contacto from './Contacto.jsx';
 import '../Estyles/Tienda.css';
@@ -78,8 +78,7 @@ export default function Tienda() {
   };
 
   const handleCerrarSesion = () => {
-    localStorage.removeItem('usuarioActivo');
-    sessionStorage.removeItem('apiAuthorization');
+    cerrarSesion();
     setUsuario(null);
   };
 
